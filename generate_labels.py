@@ -157,16 +157,13 @@ def main(argv):
         print("ERROR: empty profile, exiting", file=sys.stderr)
         sys.exit(1)
 
-    # a list to store the CSV values
-    csvlines = []
-
     try:
         csvfile = open(args.csvfile, 'r')
     except:
         print("ERROR: can't open CSV file, exiting", file=sys.stderr)
         sys.exit(1)
     try:
-        discogs_csv = csv.reader(csvfile, dialect='excel')
+        discogs_csv = csv.DictReader(csvfile, dialect='excel')
     except:
         csvfile.close()
         print("ERROR: file not CSV file, exiting", file=sys.stderr)
@@ -228,13 +225,24 @@ def main(argv):
     #  'Collection Media Condition', 'Collection Sleeve Condition',
     #  'Collection Notes']
     # By default just 'Artist' and 'Title' are added.
+    
+    # Discogs inventory export looks like this:
+    # ['listing_id' , 'artist', 'title,label', 'catno', 'format',
+    # 'release_id', 'status', 'price', 'listed', 'comments',
+    # 'media_condition', 'sleeve_condition', 'accept_offer',
+    # 'external_id', 'weight', 'format_quantity', 'flat_shipping',
+    # 'location']
+    
+    
     counter = 1
     tmpqueue = []
-    for r in csvlines:
-        (catalogue_number, artist, title, label, disc_format, rating, released, release_id, collectionfolder, date_added, media_condition, sleeve_condition, notes) = r
-
-        # now generate a QR image with a valid discogs URL
-        qrurl = QrCodeWidget('https://www.discogs.com/release/%s' % str(release_id))
+    for record in csvlines:
+        if csv_type == "collection":
+            # generate a QR image 
+            qrurl = QrCodeWidget('https://www.discogs.com/release/%s' % str(record['release_id']))
+        else:
+            # QR image with sale URL
+            qrurl = QrCodeWidget('https://www.discogs.com/sell/item/%s' % str(record['listing_id']))
 
         # set the dimensions for the Drawing, which is a square
         qrimage = Drawing(dims*profile['unit'], dims*profile['unit'])
@@ -246,16 +254,11 @@ def main(argv):
         qrhtmltext = ""
         fieldcounter = 1
         for field in fields:
-            if field == 'artist':
-                qrhtmltext += "<b>Artist:</b> %s" % artist
-            elif field == 'title':
-                qrhtmltext += "<b>Title:</b> %s" % title
-            elif field == 'sleeve':
-                qrhtmltext += "<b>Sleeve Condition:</b> %s" % sleeve_condition
-            elif field == 'media':
-                qrhtmltext += "<b>Media Condition:</b> %s" % media_condition
-            elif field == 'catalogue':
-                qrhtmltext += "<b>Catalogue No.::</b> %s" % catalogue_number
+            if record['field']:
+                qrhtmltext += "%s" % record['field']
+            elif field == 'condition':
+                qrhtmltext += "v/s: %s/%s" % (record['media_condition'], record['sleeve_condition'])     
+                
             if fieldcounter < len(fields):
                 qrhtmltext += "<br />"
             fieldcounter += 1

@@ -36,36 +36,30 @@ def main(argv):
     parser = argparse.ArgumentParser()
 
     parser.add_argument("-c", "--config", action="store", dest="cfg",
-                        help="path to configuration file", metavar="FILE")
+                        help="path to configuration file", metavar="FILE",
+                        required=True)
     parser.add_argument("-f", "--file", action="store", dest="csvfile",
-                        help="path to CSV file", metavar="FILE")
+                        help="path to CSV file", metavar="FILE",
+                        required=True)
     parser.add_argument("-o", "--out", action="store", dest="outfile",
-                        help="path to output PDF file", metavar="FILE")
+                        help="path to output PDF file", metavar="FILE",
+                        required=True)
     parser.add_argument("-p", "--profile", action="store", dest="profile",
-                        help="name of label profile", metavar="PROFILE")
+                        help="name of label profile", metavar="PROFILE",
+                        required=True)
+    parser.add_argument("-i", "--inventory", action="store", dest="csv_type",
+                        help="import csv as inventory style csv",
+                        metavar="CSVTYPE", default="collection")
+                        
     args = parser.parse_args()
 
     # sanity checks for the configuration file
-    if args.cfg is None:
-        parser.error("Configuration file missing")
-
     if not os.path.exists(args.cfg):
         parser.error("Configuration file does not exist")
 
     # sanity checks for the CSV file
-    if args.csvfile is None:
-        parser.error("CSV file missing")
-
     if not os.path.exists(args.csvfile):
         parser.error("CSV file does not exist")
-
-    # sanity checks for the output file
-    if args.outfile is None:
-        parser.error("name of output file missing")
-
-    # sanity checks for the profile
-    if args.profile is None:
-        parser.error("name of profile missing")
 
     # read the configuration file
     config = configparser.ConfigParser()
@@ -169,15 +163,6 @@ def main(argv):
         print("ERROR: file not CSV file, exiting", file=sys.stderr)
         sys.exit(1)
 
-    # now read the CSV entries and only store the actual entries,
-    # not the header
-    firstline = True
-    for r in discogs_csv:
-        if firstline:
-            # first line is not needed
-            firstline = False
-            continue
-        csvlines.append(r)
     csvfile.close()
 
     # only process if there actually were lines in the CSV
@@ -291,7 +276,7 @@ def main(argv):
                             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                             # set INNERGRID for debugging
-                            #('INNERGRID', (0, 0), (-1,-1), 0.25, colors.black)
+                            ('INNERGRID', (0, 0), (-1,-1), 0.25, colors.black)
                            ])
     elements.append(qr_table)
 

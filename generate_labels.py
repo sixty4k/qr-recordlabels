@@ -47,9 +47,9 @@ def main(argv):
     parser.add_argument("-p", "--profile", action="store", dest="profile",
                         help="name of label profile", metavar="PROFILE",
                         required=True)
-    parser.add_argument("-i", "--inventory", action="store", dest="csv_type",
-                        help="import csv as inventory style csv",
-                        metavar="CSVTYPE", default="collection")
+    parser.add_argument("-i", "--inventory", action="store_true", 
+                        dest="csv_type_inventory",
+                        help="import csv as inventory style csv")
                         
     args = parser.parse_args()
 

@@ -48,7 +48,7 @@ def main(argv):
                         help="name of label profile", metavar="PROFILE",
                         required=True)
     parser.add_argument("-i", "--inventory", action="store_true", 
-                        dest="csv_type_inventory",
+                        dest="inventory_csv",
                         help="import csv as inventory style csv")
                         
     args = parser.parse_args()
@@ -151,6 +151,9 @@ def main(argv):
         print("ERROR: empty profile, exiting", file=sys.stderr)
         sys.exit(1)
 
+    # a list to store the CSV values
+    csvlines = []
+
     try:
         csvfile = open(args.csvfile, 'r')
     except:
@@ -162,6 +165,9 @@ def main(argv):
         csvfile.close()
         print("ERROR: file not CSV file, exiting", file=sys.stderr)
         sys.exit(1)
+
+    for r in discogs_csv:
+        csvlines.append(r)
 
     csvfile.close()
 
@@ -212,7 +218,7 @@ def main(argv):
     # By default just 'Artist' and 'Title' are added.
     
     # Discogs inventory export looks like this:
-    # ['listing_id' , 'artist', 'title,label', 'catno', 'format',
+    # ['listing_id', 'artist', 'title', 'label', 'catno', 'format',
     # 'release_id', 'status', 'price', 'listed', 'comments',
     # 'media_condition', 'sleeve_condition', 'accept_offer',
     # 'external_id', 'weight', 'format_quantity', 'flat_shipping',
@@ -221,28 +227,48 @@ def main(argv):
     
     counter = 1
     tmpqueue = []
+
     for record in csvlines:
-        if csv_type == "collection":
-            # generate a QR image 
-            qrurl = QrCodeWidget('https://www.discogs.com/release/%s' % str(record['release_id']))
-        else:
+        if args.inventory_csv:
             # QR image with sale URL
             qrurl = QrCodeWidget('https://www.discogs.com/sell/item/%s' % str(record['listing_id']))
 
+        else:
+            # generate a QR image 
+            qrurl = QrCodeWidget('https://www.discogs.com/release/%s' % str(record['release_id']))
+ 
         # set the dimensions for the Drawing, which is a square
         qrimage = Drawing(dims*profile['unit'], dims*profile['unit'])
 
         # add the QR code to the drawing
         qrimage.add(qrurl)
 
+        field_converter = {
+            'catno': 'Catalog#',
+            'artist': 'Artist',
+            'title': 'Title',
+            'label': 'Label',
+            'format': 'Format',
+            'folder': 'CollectionFolder',
+            'date_added': 'Date Added',
+            'media_condition': 'Collection Media Condition',
+            'sleeve_condition': 'Collection Sleeve Condition',
+            'note': 'Collection Notes'
+        }
+
         # create the HTML with the text
         qrhtmltext = ""
         fieldcounter = 1
         for field in fields:
-            if record['field']:
-                qrhtmltext += "%s" % record['field']
-            elif field == 'condition':
-                qrhtmltext += "v/s: %s/%s" % (record['media_condition'], record['sleeve_condition'])     
+            if field == 'condition':
+                if args.inventory_csv:
+                    qrhtmltext += "v: %s <br />s: %s" % (record['media_condition'], record['sleeve_condition'])
+                else:
+                    qrhtmltext += "v: %s <br />s: %s"  % (record['Collection Media Condition'], record['Collection Sleeve Condition'])
+            elif field in record: 
+                qrhtmltext += "%s" % record[field]
+            elif field_converter[field] in record: 
+                qrhtmltext += "%s" % record[field_converter[field]]
                 
             if fieldcounter < len(fields):
                 qrhtmltext += "<br />"
@@ -276,7 +302,7 @@ def main(argv):
                             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                             # set INNERGRID for debugging
-                            ('INNERGRID', (0, 0), (-1,-1), 0.25, colors.black)
+                            ('INNERGRID', (0, 0), (-1,-1), 0.25, colors.red)
                            ])
     elements.append(qr_table)
 

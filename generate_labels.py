@@ -20,17 +20,19 @@ import os
 import argparse
 import configparser
 import csv
+import fpdf
 
-# load a lot of reportlab stuff
-from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
-from reportlab.graphics.shapes import Drawing
-from reportlab.platypus import Image, Paragraph
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.units import mm
-from reportlab.lib import colors
-from reportlab.graphics.barcode.qr import QrCodeWidget
+# //////////////////////////////////////////////////////////////////////////////
+# DOWNLOAD TEMPLATE
+# //////////////////////////////////////////////////////////////////////////////
 
+if not os.path.exists('./pdflabels.py'):
+    print('Required file nonexistent...downloading...')
+    url = 'https://raw.githubusercontent.com/reingart/pyfpdf/master/tools/'
+    f = 'pdflabels.py'
+    urllib.request.urlretrieve(url + f, f)
+
+import pdflabels
 
 def main(argv):
     parser = argparse.ArgumentParser()
